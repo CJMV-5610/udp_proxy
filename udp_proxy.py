@@ -8,7 +8,8 @@ minetest_nmpr  ---( SOURCE )-->  server_proxy  ---(  DEST  )-->  minetest_client
 minetest_npmr  <--( SOURCE )---  server_proxy  <--(  DEST  )---  minetest_client
 """
 
-HOST = ""
+SERVER_NAME = 'http://minetest'
+HOST = ''
 BUFFER_SIZE = 1024
 
 SELECTOR = selectors.DefaultSelector()
@@ -23,7 +24,7 @@ PARSER.add_argument("destination_port", type=int)
 
 def start_forwarding(source_port: int, destination_port: int) -> None:
     source_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    source_socket.bind((HOST, source_port))
+    source_socket.bind((SERVER_NAME, source_port))
     # SELECTOR.register(source_socket, selectors.EVENT_READ)
     print(f'Listening on {(HOST, source_port)}/udp...')
 
@@ -51,4 +52,9 @@ def main():
 
 
 if __name__ == "__main__":
+    with open('/etc/resolv.conf', 'r') as hosts_file:
+        print(hosts_file.read())
+    with open('/etc/hosts', 'r') as hosts_file:
+        print(hosts_file.read())
+
     main()
