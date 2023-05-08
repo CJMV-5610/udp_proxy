@@ -8,7 +8,7 @@ minetest_nmpr  ---( SOURCE )-->  server_proxy  ---(  DEST  )-->  minetest_client
 minetest_npmr  <--( SOURCE )---  server_proxy  <--(  DEST  )---  minetest_client
 """
 
-SERVER_NAME = 'http://minetest'
+SERVER_NAME = 'minetest'
 HOST = ''
 BUFFER_SIZE = 1024
 
