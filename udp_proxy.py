@@ -1,18 +1,9 @@
 import socket
 import argparse
-import selectors
 
-"""
-minetest_nmpr  ---( SOURCE )-->  server_proxy  ---(  DEST  )-->  minetest_client
-
-minetest_npmr  <--( SOURCE )---  server_proxy  <--(  DEST  )---  minetest_client
-"""
-
-SERVER_NAME = 'minetest'
-HOST = ''
+SERVER_NAME = "minetest"
+HOST = ""
 BUFFER_SIZE = 1024
-
-SELECTOR = selectors.DefaultSelector()
 
 PARSER = argparse.ArgumentParser(
     prog="udp_proxy.py",
@@ -22,26 +13,40 @@ PARSER.add_argument("source_port", type=int)
 PARSER.add_argument("destination_port", type=int)
 
 
+PROTOCOL_ID = b"\x4f\x45\x74\x03"
+
+
+def isPlayerPosPacket(packet: bytes) -> bool:
+    if not packet.startswith(PROTOCOL_ID):
+        return False
+    # TODO: Strip off packet header and then check for '#' as the first byte.
+    return packet.find(b"#")
+
+
 def start_forwarding(source_port: int, destination_port: int) -> None:
     source_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    source_socket.bind((SERVER_NAME, source_port))
-    # SELECTOR.register(source_socket, selectors.EVENT_READ)
-    print(f'Listening on {(HOST, source_port)}/udp...')
+    source_socket.connect((SERVER_NAME, source_port))
+    print(f"Connecting to {(HOST, source_port)}/udp...")
 
     destination_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     destination_socket.bind((HOST, destination_port))
-    # SELECTOR.register(destination_socket, selectors.EVENT_READ)
-    print(f'Listening on {(HOST, destination_port)}/udp...')
+    print(f"Listening on {(HOST, destination_port)}/udp...")
 
-    while True:
-        (source_data, source_addr) = source_socket.recvfrom(BUFFER_SIZE)
-        (destination_data, destination_addr) = destination_socket.recvfrom(BUFFER_SIZE)
+    with open("/tmp/udp_proxy.log", "wb") as out_file:
+        while True:
+            (destination_data, destination_addr) = destination_socket.recvfrom(
+                BUFFER_SIZE
+            )
+            source_socket.send(destination_data)
 
-        if not source_data and not destination_data:
-            continue
+            (source_data, source_addr) = source_socket.recvfrom(BUFFER_SIZE)
 
-        print(f"Source {source_addr} data:\n{source_data}\n")
-        print(f"Destination {destination_addr} data:\n{destination_data}")
+            if isPlayerPosPacket(source_data):
+                out_file.write(source_data + b'\n')
+                packet = source_data[:9] + (len(source_data[9:]) * b'\x00')
+                out_file.write(packet + b'\n')
+
+            destination_socket.sendto(packet, destination_addr)
 
 
 def main():
@@ -52,9 +57,4 @@ def main():
 
 
 if __name__ == "__main__":
-    with open('/etc/resolv.conf', 'r') as hosts_file:
-        print(hosts_file.read())
-    with open('/etc/hosts', 'r') as hosts_file:
-        print(hosts_file.read())
-
     main()
