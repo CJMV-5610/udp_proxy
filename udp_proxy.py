@@ -24,7 +24,7 @@ def start_forwarding(source_port: int, destination_port: int) -> None:
     client_socket.bind((HOST, destination_port))
     print(f"Listening on {(HOST, destination_port)}/udp...")
 
-    with open("/tmp/udp_proxy.logs", "wb") as log_file:
+    with open("/tmp/udp_proxy.log", "wb") as log_file:
         while True:
             (client_data, client_addr) = client_socket.recvfrom(BUFFER_SIZE)
 
