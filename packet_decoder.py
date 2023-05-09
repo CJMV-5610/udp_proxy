@@ -29,7 +29,7 @@ class S32:
         return self
 
     def __bytes__(self) -> bytes:
-        return self.value().to_bytes(S32.byte_length(), "big", signed=False)
+        return self.value().to_bytes(S32.byte_length(), "big", signed=True)
 
     def __repr__(self) -> str:
         return f"{self.value()}"
