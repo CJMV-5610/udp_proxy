@@ -35,8 +35,8 @@ def start_forwarding(source_port: int, destination_port: int) -> None:
                 packet.scale_speed(1.2)
                 try:
                     client_data = bytes(packet)
-                except OverflowError:
-                    print("Moving too fast!")
+                except OverflowError as err:
+                    print(f"OverflowError: {','.join(err.args)}")
 
             server_socket.send(client_data)
             log_file.write(client_data)
