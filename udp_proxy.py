@@ -13,40 +13,40 @@ PARSER.add_argument("source_port", type=int)
 PARSER.add_argument("destination_port", type=int)
 
 
-PROTOCOL_ID = b"\x4f\x45\x74\x03"
+PROTOCOL_ID = bytes(b"\x4f\x45\x74\x03")
 
 
-def isPlayerPosPacket(packet: bytes) -> bool:
-    if not packet.startswith(PROTOCOL_ID):
+def is_protocol_packet(packet: bytes) -> bool:
+    return packet.startswith(PROTOCOL_ID)
+
+
+def is_player_pos_packet(packet: bytes) -> bool:
+    if not is_protocol_packet(packet):
         return False
-    # TODO: Strip off packet header and then check for '#' as the first byte.
-    return packet.find(b"#")
+    if len(packet) < 9:
+        return False
+    return packet[9] == 0x23
 
 
 def start_forwarding(source_port: int, destination_port: int) -> None:
-    source_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    source_socket.connect((SERVER_NAME, source_port))
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_socket.connect((SERVER_NAME, source_port))
     print(f"Connecting to {(HOST, source_port)}/udp...")
 
-    destination_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    destination_socket.bind((HOST, destination_port))
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    client_socket.bind((HOST, destination_port))
     print(f"Listening on {(HOST, destination_port)}/udp...")
 
-    with open("/tmp/udp_proxy.log", "wb") as out_file:
-        while True:
-            (destination_data, destination_addr) = destination_socket.recvfrom(
-                BUFFER_SIZE
-            )
-            source_socket.send(destination_data)
+    while True:
+        (client_data, client_addr) = client_socket.recvfrom(BUFFER_SIZE)
 
-            (source_data, source_addr) = source_socket.recvfrom(BUFFER_SIZE)
+        # TODO: Adversarial client packet modification
+        # if is_player_pos_packet(client_data):
+        #     pass
 
-            if isPlayerPosPacket(source_data):
-                out_file.write(source_data + b'\n')
-                packet = source_data[:9] + (len(source_data[9:]) * b'\x00')
-                out_file.write(packet + b'\n')
-
-            destination_socket.sendto(packet, destination_addr)
+        server_socket.send(client_data)
+        server_data = server_socket.recvfrom(BUFFER_SIZE)[0]
+        client_socket.sendto(server_data, client_addr)
 
 
 def main():
