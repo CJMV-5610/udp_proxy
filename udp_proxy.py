@@ -13,9 +13,13 @@ PARSER = argparse.ArgumentParser(
 )
 PARSER.add_argument("source_port", type=int)
 PARSER.add_argument("destination_port", type=int)
+PARSER.add_argument("-s", "--speed", type=float)
+ARGS = PARSER.parse_args()
 
 
 def start_forwarding(source_port: int, destination_port: int) -> None:
+    speed_factor = 1 if ARGS.speed is None else ARGS.speed
+
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_socket.connect((SERVER_NAME, source_port))
     print(f"Connecting to {(HOST, source_port)}/udp...")
@@ -32,7 +36,7 @@ def start_forwarding(source_port: int, destination_port: int) -> None:
             if TOSERVER_PLAYERPOS.matches(client_data):
                 packet = TOSERVER_PLAYERPOS(client_data)
                 print("Speeding up player!")
-                packet.scale_speed(1.2)
+                packet.scale_speed(speed_factor)
                 try:
                     client_data = bytes(packet)
                 except OverflowError as err:
@@ -45,9 +49,8 @@ def start_forwarding(source_port: int, destination_port: int) -> None:
 
 
 def main():
-    args = PARSER.parse_args()
-    source_port = args.source_port
-    destination_port = args.destination_port
+    source_port = ARGS.source_port
+    destination_port = ARGS.destination_port
     start_forwarding(source_port, destination_port)
 
 
