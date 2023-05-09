@@ -1,6 +1,7 @@
-import socket
-import argparse
 from packet_decoder import TOSERVER_PLAYERPOS
+
+import argparse
+import socket
 
 SERVER_NAME = "minetest"
 HOST = ""
@@ -23,18 +24,24 @@ def start_forwarding(source_port: int, destination_port: int) -> None:
     client_socket.bind((HOST, destination_port))
     print(f"Listening on {(HOST, destination_port)}/udp...")
 
-    while True:
-        (client_data, client_addr) = client_socket.recvfrom(BUFFER_SIZE)
+    with open("/tmp/udp_proxy.logs", "wb") as log_file:
+        while True:
+            (client_data, client_addr) = client_socket.recvfrom(BUFFER_SIZE)
 
-        # TODO: Adversarial client packet modification
-        if TOSERVER_PLAYERPOS.matches(client_data):
-            packet = TOSERVER_PLAYERPOS(client_data)
-            packet.scale_speed(2)
-            client_data = bytes(packet)
+            # TODO: Adversarial modification of client position packets
+            if TOSERVER_PLAYERPOS.matches(client_data):
+                packet = TOSERVER_PLAYERPOS(client_data)
+                print("Speeding up player!")
+                packet.scale_speed(1.2)
+                try:
+                    client_data = bytes(packet)
+                except OverflowError:
+                    print("Moving too fast!")
 
-        server_socket.send(client_data)
-        server_data = server_socket.recvfrom(BUFFER_SIZE)[0]
-        client_socket.sendto(server_data, client_addr)
+            server_socket.send(client_data)
+            log_file.write(client_data)
+            server_data = server_socket.recvfrom(BUFFER_SIZE)[0]
+            client_socket.sendto(server_data, client_addr)
 
 
 def main():
