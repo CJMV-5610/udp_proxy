@@ -1,5 +1,6 @@
 import socket
 import argparse
+from packet_decoder import TOSERVER_PLAYERPOS
 
 SERVER_NAME = "minetest"
 HOST = ""
@@ -11,21 +12,6 @@ PARSER = argparse.ArgumentParser(
 )
 PARSER.add_argument("source_port", type=int)
 PARSER.add_argument("destination_port", type=int)
-
-
-PROTOCOL_ID = bytes(b"\x4f\x45\x74\x03")
-
-
-def is_protocol_packet(packet: bytes) -> bool:
-    return packet.startswith(PROTOCOL_ID)
-
-
-def is_player_pos_packet(packet: bytes) -> bool:
-    if not is_protocol_packet(packet):
-        return False
-    if len(packet) < 9:
-        return False
-    return packet[9] == 0x23
 
 
 def start_forwarding(source_port: int, destination_port: int) -> None:
@@ -41,8 +27,10 @@ def start_forwarding(source_port: int, destination_port: int) -> None:
         (client_data, client_addr) = client_socket.recvfrom(BUFFER_SIZE)
 
         # TODO: Adversarial client packet modification
-        # if is_player_pos_packet(client_data):
-        #     pass
+        if TOSERVER_PLAYERPOS.matches(client_data):
+            packet = TOSERVER_PLAYERPOS(client_data)
+            packet.scale_speed(2)
+            client_data = bytes(packet)
 
         server_socket.send(client_data)
         server_data = server_socket.recvfrom(BUFFER_SIZE)[0]
