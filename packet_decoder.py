@@ -1,4 +1,4 @@
-PROTOCOL_ID = bytes(b"\x4f\x45\x74\x03")
+PROTOCOL_ID = b"\x4f\x45\x74\x03"
 TOSERVER_PLAYERPOS_ID = 0x23
 
 
@@ -9,7 +9,7 @@ def is_protocol_packet(packet: bytes) -> bool:
 class S32:
     def __init__(self, data: bytes) -> None:
         if len(data) != S32.byte_length():
-            raise ValueError(len(data))
+            raise ValueError(data)
         self._value = (
             (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | (data[3] << 0)
         )
@@ -48,7 +48,7 @@ class S32:
 class V3S32:
     def __init__(self, data: bytes) -> None:
         if len(data) != V3S32.byte_length():
-            raise ValueError(len(data))
+            raise ValueError(data)
 
         self.x = S32(data[0:4])
         self.y = S32(data[4:8])
@@ -81,9 +81,9 @@ class V3S32:
 
 class TOSERVER_PLAYERPOS:
     def __init__(self, data: bytes) -> None:
-        packet = data.split(b"\x23")[-1]
-        if len(packet) != 24:
-            raise ValueError(len(packet))
+        packet = data[10:]
+        if len(packet) != TOSERVER_PLAYERPOS.byte_length():
+            raise ValueError(packet)
 
         self.position = V3S32(packet[0:12])
         self.speed = V3S32(packet[12:24])
@@ -101,7 +101,9 @@ class TOSERVER_PLAYERPOS:
             return False
         if len(packet) < 9:
             return False
-        return packet[9] == TOSERVER_PLAYERPOS_ID
+        if not packet[9] == TOSERVER_PLAYERPOS_ID:
+            return False
+        return len(packet[10:]) == TOSERVER_PLAYERPOS.byte_length()
 
     def scale_speed(self, factor) -> None:
         self.speed *= factor
