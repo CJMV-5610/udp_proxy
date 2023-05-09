@@ -25,7 +25,11 @@ class S32:
         return self._value
 
     def __imul__(self, other):
-        self._value = int(self._value * other)
+        self._value = int(self.value() * other)
+        return self
+
+    def __iadd__(self, other):
+        self._value = self.value() + other.value()
         return self
 
     def __bytes__(self) -> bytes:
@@ -67,6 +71,12 @@ class V3S32:
         self.z *= other
         return self
 
+    def __iadd__(self, other):
+        self.x += other.x
+        self.y += other.y
+        self.z += other.z
+        return self
+
     def __bytes__(self) -> bytes:
         return bytes(self.x) + bytes(self.y) + bytes(self.z)
 
@@ -74,9 +84,7 @@ class V3S32:
         return f"V3S32({repr(self.x)}, {repr(self.y)}, {repr(self.z)})"
 
     def __str__(self) -> str:
-        return (
-            f"V3S32({self.x.value() / 100}, {self.y.value() / 100}, {self.z.value() / 100})"
-        )
+        return f"V3S32({self.x.value() / 100}, {self.y.value() / 100}, {self.z.value() / 100})"
 
 
 class TOSERVER_PLAYERPOS:
@@ -106,7 +114,12 @@ class TOSERVER_PLAYERPOS:
         return len(packet[10:]) == TOSERVER_PLAYERPOS.byte_length()
 
     def scale_speed(self, factor) -> None:
+        print(f"Old position: {self.position}")
+        print(f"Old speed: {self.speed}")
         self.speed *= factor
+        self.position += self.speed
+        print(f"New position: {self.position}")
+        print(f"New speed: {self.speed}")
 
     def __bytes__(self) -> bytes:
         return bytes(self.position) + bytes(self.speed)
