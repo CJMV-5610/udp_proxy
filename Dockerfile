@@ -12,6 +12,7 @@ EXPOSE 20000
 EXPOSE 30000
 
 COPY ./udp_proxy.py ./udp_proxy.py
+COPY ./packet_decoder.py ./packet_decoder.py
 COPY ./entrypoint.sh ./entrypoint.sh
 
 CMD ["./entrypoint.sh"]
