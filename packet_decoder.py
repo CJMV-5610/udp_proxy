@@ -1,3 +1,5 @@
+import struct
+
 PROTOCOL_ID = b"\x4f\x45\x74\x03"
 TOSERVER_PLAYERPOS_ID = 0x23
 
@@ -10,9 +12,7 @@ class S32:
     def __init__(self, data: bytes) -> None:
         if len(data) != S32.byte_length():
             raise ValueError(data)
-        self._value = (
-            (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | (data[3] << 0)
-        )
+        self._value = struct.unpack(">i", data)[0]
 
     @staticmethod
     def byte_length() -> int:
@@ -75,7 +75,7 @@ class V3S32:
 
     def __str__(self) -> str:
         return (
-            f"({self.x.value() / 100}, {self.y.value() / 100}, {self.z.value() / 100})"
+            f"V3S32({self.x.value() / 100}, {self.y.value() / 100}, {self.z.value() / 100})"
         )
 
 
@@ -115,4 +115,4 @@ class TOSERVER_PLAYERPOS:
         return f"TOSERVER_PLAYERPOS(\n\t{repr(self.position)},\n\t{repr(self.speed)}\n)"
 
     def __str__(self) -> str:
-        return f"({self.position}, {self.speed})"
+        return f"TOSERVER_PLAYERPOS(\n\tposition: {self.position},\n\tspeed: {self.speed}\n)"
